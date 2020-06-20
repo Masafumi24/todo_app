@@ -6,13 +6,14 @@ use App\Folder;
 use App\Task;
 use App\Http\Requests\EditTask;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\CreateTask;
 
 class TaskController extends Controller
 {
     public function index(int $id)
     {
-        $folders = Folder::all();
+        $folders = Auth::user()->folders()->get();
         $current_folder = Folder::find($id);
         $tasks = $current_folder->tasks()->get();
 
