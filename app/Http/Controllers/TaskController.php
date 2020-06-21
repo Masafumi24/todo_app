@@ -11,61 +11,68 @@ use App\Http\Requests\CreateTask;
 
 class TaskController extends Controller
 {
-    public function index(int $id)
+    /**
+     * タスク一覧
+     * @param Folder $folder
+     * @return \Illuminate\View\View
+     */
+    public function index(Folder $folder)
     {
+        if (Auth::user()->id !== $folder->user_id) {
+            abort(403);
+        }
         $folders = Auth::user()->folders()->get();
-        $current_folder = Folder::find($id);
-        $tasks = $current_folder->tasks()->get();
+
+        $tasks = $folder->tasks()->get();
 
         return view('tasks/index',[
             'folders' => $folders,
-            'current_folder_id' => $current_folder->id,
+            'current_folder_id' => $folder->id,
             'tasks' => $tasks,
         ]);
     }
     
-    public function showCreateForm(int $id)
+    public function showCreateForm(Folder $folder)
     {
         return view('tasks/create', [
-            'folder_id' => $id
+            'folder_id' => $folder->id
         ]);
     }
 
-    public function create(int $id, CreateTask $request)
+    public function create(Folder $folder, CreateTask $request)
     {
-        $current_folder = Folder::find($id);
     
         $task = new Task();
         $task->title = $request->title;
         $task->due_data = $request->due_data;
     
-        $current_folder->tasks()->save($task);
+        $folder->tasks()->save($task);
     
-        return redirect()->route('tasks.index', [
-            'id' => $current_folder->id,
-        ]);
+        return redirect()->route('tasks.index', [$folder->id]);
+
+        // return redirect()->route('tasks.index', [
+        //     'id' => $folder->id,
+        // ]);
     }
 
-    public function showEditForm(int $id, $task_id)
+    public function showEditForm(Folder $folder, Task $task)
     {
-        $task = Task::find($task_id);
-
         return view('tasks/edit', [
             'task' => $task,
         ]);
     }
 
-    public function edit(int $id, int $task_id, EditTask $request)
+    public function edit(Folder $folder, Task $task, EditTask $request)
         {
-            $task = Task::find($task_id);
-
             $task->title = $request->title;
             $task->status = $request->status;
             $task->due_data = $request->due_data;
             $task->save();
 
-            return redirect()->route('tasks.index', [
-                'id' => $task->folder_id,
-            ]);
+            return redirect()->route('tasks.index', [$folder->id]);
+
+            // return redirect()->route('tasks.index', [
+            //     'id' => $task->folder_id,
+            // ]);
         }
 }
