@@ -11,16 +11,8 @@ use App\Http\Requests\CreateTask;
 
 class TaskController extends Controller
 {
-    /**
-     * タスク一覧
-     * @param Folder $folder
-     * @return \Illuminate\View\View
-     */
     public function index(Folder $folder)
     {
-        if (Auth::user()->id !== $folder->user_id) {
-            abort(403);
-        }
         $folders = Auth::user()->folders()->get();
 
         $tasks = $folder->tasks()->get();
@@ -49,30 +41,31 @@ class TaskController extends Controller
         $folder->tasks()->save($task);
     
         return redirect()->route('tasks.index', [$folder->id]);
-
-        // return redirect()->route('tasks.index', [
-        //     'id' => $folder->id,
-        // ]);
     }
 
     public function showEditForm(Folder $folder, Task $task)
     {
+        $this->checkRelation($folder, $task);
         return view('tasks/edit', [
             'task' => $task,
         ]);
     }
 
     public function edit(Folder $folder, Task $task, EditTask $request)
-        {
-            $task->title = $request->title;
-            $task->status = $request->status;
-            $task->due_data = $request->due_data;
-            $task->save();
+    {
+        $this->checkRelation($folder, $task);
+        $task->title = $request->title;
+        $task->status = $request->status;
+        $task->due_data = $request->due_data;
+        $task->save();
 
-            return redirect()->route('tasks.index', [$folder->id]);
+        return redirect()->route('tasks.index', [$folder->id]);
+    }
 
-            // return redirect()->route('tasks.index', [
-            //     'id' => $task->folder_id,
-            // ]);
+    private function checkRelation(Folder $folder, Task $task)
+    {
+        if ($folder->id !== $task->folder_id) {
+            abort(404);
         }
+    }
 }
